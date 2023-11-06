@@ -198,10 +198,14 @@ def get_gi_34849618_sequence():
     return SeqIO.read(handle, "genbank").seq
 
 
+def compare_two_sequences(seq1, seq2, gap):
+    optimal_matches_arr = optimal_matches_algorithm(seq1, seq2, match=1, mismatch=-1, gap=gap)
+    print_optimal_matches(optimal_matches_arr)
+
+
 if __name__ == '__main__':
     seq_40886941 = get_gi_40886941_sequence()
     seq_34849618 = get_gi_34849618_sequence()
 
-    optimal_matches_arr = optimal_matches_algorithm_blosum62(seq_40886941, seq_34849618, gap=-7)
     print("Optymalne dopasowanie dla sekwencji hemoglobiny beta człowieka i szczura:")
-    print_optimal_matches(optimal_matches_arr)
+    compare_two_sequences(seq_40886941, seq_34849618, gap=-7)
