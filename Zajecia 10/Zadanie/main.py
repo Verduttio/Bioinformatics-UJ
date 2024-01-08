@@ -28,7 +28,7 @@ def read_sequences_from_fasta_file(file_name):
     return sequences
 
 
-def count_greatest_common_sequence_len_per_each_one(sequences):
+def count_greatest_prefix_suffix_len_per_each_one(sequences):
     # output: [[first sequence with second, first with third, ..., first with last],
     #          [second sequence with third, second with fourth, ..., second with last],
     #          [third with fourth, third with fifth, ..., third with last],
@@ -36,11 +36,38 @@ def count_greatest_common_sequence_len_per_each_one(sequences):
     #          [last-1 with last]
     #         ]
 
-    greatest_common_sequence_len_per_each_one = []
+    greatest_prefix_suffix_len_per_each_one = []
     for i in range(len(sequences) - 1):
-        greatest_common_sequence_len_per_one = pylcs.lcs_string_of_list(sequences[i], sequences[i + 1:])
-        greatest_common_sequence_len_per_each_one.append(greatest_common_sequence_len_per_one)
-    return greatest_common_sequence_len_per_each_one
+        greatest_prefix_suffix_len_per_one = prefix_suffix_match(sequences[i], sequences[i + 1:])
+        greatest_prefix_suffix_len_per_each_one.append(greatest_prefix_suffix_len_per_one)
+    return greatest_prefix_suffix_len_per_each_one
+
+
+def find_prefix_suffix_length(s1, s2):
+    length = 0
+    max_length = min(len(s1), len(s2))
+
+    for i in range(1, max_length + 1):
+        if s1[:i] == s2[-i:]:
+            length = i
+
+    if length == 0:
+        s1, s2 = s2, s1
+        for i in range(1, max_length + 1):
+            if s1[:i] == s2[-i:]:
+                length = i
+
+    return length
+
+
+def prefix_suffix_match(main_str, str_array):
+    result = []
+
+    for s in str_array:
+        prefix_suffix_length = max(find_prefix_suffix_length(main_str, s), find_prefix_suffix_length(s, main_str))
+        result.append(prefix_suffix_length)
+
+    return result
 
 
 def find_indexes_of_maximum_value_in_2d_list(list_2d):
@@ -58,9 +85,9 @@ def parse_indexes_into_sequence_ids(i, j):
     return i, j+i+1
 
 
-def find_indexes_of_two_sequences_with_greatest_common_sequence_len(sequences):
-    greatest_common_sequence_len_per_each_one = count_greatest_common_sequence_len_per_each_one(sequences)
-    i, j = find_indexes_of_maximum_value_in_2d_list(greatest_common_sequence_len_per_each_one)
+def find_indexes_of_two_sequences_with_greatest_prefix_suffix_len(sequences):
+    greatest_prefix_suffix_len_per_each_one = count_greatest_prefix_suffix_len_per_each_one(sequences)
+    i, j = find_indexes_of_maximum_value_in_2d_list(greatest_prefix_suffix_len_per_each_one)
     if i is None:
         return None, None
     return parse_indexes_into_sequence_ids(i, j)
@@ -83,7 +110,7 @@ def connect_two_sequences_through_common_sequence(seq1, seq2):
 def assembly_sequence_from_reads(sequences):
     while len(sequences) > 1:
         print("Log: {} sequences left".format(len(sequences)))
-        seq1_index, seq2_index = find_indexes_of_two_sequences_with_greatest_common_sequence_len(sequences)
+        seq1_index, seq2_index = find_indexes_of_two_sequences_with_greatest_prefix_suffix_len(sequences)
         if seq1_index is None:
             break
         seq1, seq2 = sequences[seq1_index], sequences[seq2_index]
@@ -110,5 +137,8 @@ if __name__ == '__main__':
     print("Długości kontigów: {}".format([len(x) for x in result_sequences]))
     print("Sumaryczna długość kontigów: {}".format(sum([len(x) for x in result_sequences])))
     print("Długość chromosomu Y: {}".format(len(y_chromosome)))
-    print("Czy kontigi występują w chromosomie Y: {}".format(all([y_chromosome.find(x) != -1 for x in result_sequences])))
 
+    if len(result_sequences) == 1:
+        lcs_len = pylcs.lcs(y_chromosome, result_sequences[0])
+        print("Długość najdłuższego podciągu: {}".format(lcs_len))
+        print("Podobieństwo: {}".format(lcs_len / len(y_chromosome)))
