@@ -142,3 +142,7 @@ if __name__ == '__main__':
         lcs_len = pylcs.lcs(y_chromosome, result_sequences[0])
         print("Długość najdłuższego podciągu: {}".format(lcs_len))
         print("Podobieństwo: {}".format(lcs_len / len(y_chromosome)))
+
+    # Zwrócona sekwencja nie jest identyczna jak bazowa.
+    # Jednak jest do niej bardzo podobna.
+    # Podobieństwo było różne i w zależności od rozlosowania zbliżało się do 98%.
