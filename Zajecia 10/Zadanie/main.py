@@ -1,16 +1,114 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+from Bio import SeqIO
+import pylcs
+import random
 
 
-# Press the green button in the gutter to run the script.
+def generate_random_reads(sequence, fragment_length=200, expected_coverage=5):
+    number_of_draws = len(sequence) * expected_coverage // fragment_length
+    reads = []
+    random.seed()
+    for _ in range(number_of_draws):
+        start_index = random.randint(0, len(sequence) - fragment_length)
+        reads.append(sequence[start_index: start_index + fragment_length])
+    return reads
+
+
+def sequences_to_fasta_file(sequences, file_name):
+    with open(file_name, "w") as handle:
+        for i, sequence in enumerate(sequences):
+            handle.write(">read_{}\n".format(i))
+            handle.write(sequence + "\n")
+
+
+def read_sequences_from_fasta_file(file_name):
+    sequences = []
+    with open(file_name, "r") as handle:
+        for record in SeqIO.parse(handle, "fasta"):
+            sequences.append(str(record.seq))
+    return sequences
+
+
+def count_greatest_common_sequence_len_per_each_one(sequences):
+    # output: [[first sequence with second, first with third, ..., first with last],
+    #          [second sequence with third, second with fourth, ..., second with last],
+    #          [third with fourth, third with fifth, ..., third with last],
+    #          ...,
+    #          [last-1 with last]
+    #         ]
+
+    greatest_common_sequence_len_per_each_one = []
+    for i in range(len(sequences) - 1):
+        greatest_common_sequence_len_per_one = pylcs.lcs_string_of_list(sequences[i], sequences[i + 1:])
+        greatest_common_sequence_len_per_each_one.append(greatest_common_sequence_len_per_one)
+    return greatest_common_sequence_len_per_each_one
+
+
+def find_indexes_of_maximum_value_in_2d_list(list_2d):
+    max_value = max(map(max, list_2d))
+    if max_value == 0:
+        return None, None
+
+    for i, row in enumerate(list_2d):
+        for j, value in enumerate(row):
+            if value == max_value:
+                return i, j
+
+
+def parse_indexes_into_sequence_ids(i, j):
+    return i, j+i+1
+
+
+def find_indexes_of_two_sequences_with_greatest_common_sequence_len(sequences):
+    greatest_common_sequence_len_per_each_one = count_greatest_common_sequence_len_per_each_one(sequences)
+    i, j = find_indexes_of_maximum_value_in_2d_list(greatest_common_sequence_len_per_each_one)
+    if i is None:
+        return None, None
+    return parse_indexes_into_sequence_ids(i, j)
+
+
+def connect_two_sequences_through_common_sequence(seq1, seq2):
+    res = pylcs.lcs_string_idx(seq1, seq2)
+    common_sequence = ''.join([seq2[i] for i in res if i != -1])
+
+    seq1_start_index_of_common_seq = seq1.find(common_sequence)
+
+    # seq1 should be beginning sequence
+    # [seq1_common_seq2]
+    if seq1_start_index_of_common_seq == 0:
+        seq1, seq2 = seq2, seq1
+
+    return seq1 + seq2[len(common_sequence):]
+
+
+def assembly_sequence_from_reads(sequences):
+    while len(sequences) > 1:
+        print("Log: {} sequences left".format(len(sequences)))
+        seq1_index, seq2_index = find_indexes_of_two_sequences_with_greatest_common_sequence_len(sequences)
+        if seq1_index is None:
+            break
+        seq1, seq2 = sequences[seq1_index], sequences[seq2_index]
+        connected_sequence = connect_two_sequences_through_common_sequence(seq1, seq2)
+        sequences.append(connected_sequence)
+        sequences.remove(seq1)
+        sequences.remove(seq2)
+    return sequences
+
+
+def assembly_sequence_from_file(file_name):
+    sequences = read_sequences_from_fasta_file(file_name)
+    return assembly_sequence_from_reads(sequences)
+
+
 if __name__ == '__main__':
-    print_hi('PyCharm')
+    y_chromosome = read_sequences_from_fasta_file("seq.fasta")[0]
+    random_reads = generate_random_reads(y_chromosome, 200, 5)
+    sequences_to_fasta_file(random_reads, "reads.fasta")
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    result_sequences = assembly_sequence_from_file("reads.fasta")
+
+    print("Liczba kontigów: {}".format(len(result_sequences)))
+    print("Długości kontigów: {}".format([len(x) for x in result_sequences]))
+    print("Sumaryczna długość kontigów: {}".format(sum([len(x) for x in result_sequences])))
+    print("Długość chromosomu Y: {}".format(len(y_chromosome)))
+    print("Czy kontigi występują w chromosomie Y: {}".format(all([y_chromosome.find(x) != -1 for x in result_sequences])))
+
