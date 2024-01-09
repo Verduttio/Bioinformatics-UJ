@@ -145,4 +145,4 @@ if __name__ == '__main__':
 
     # Zwrócona sekwencja nie jest identyczna jak bazowa.
     # Jednak jest do niej bardzo podobna.
-    # Podobieństwo było różne i w zależności od rozlosowania zbliżało się do 98%.
+    # Podobieństwo było różne i w zależności od rozlosowania zbliżało się nawet do 98%.
